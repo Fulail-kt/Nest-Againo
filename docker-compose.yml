@@ -1,0 +1,16 @@
+services: 
+  postgres:
+    image: postgres:18
+    container_name: nest-pro-db
+    restart: unless-stopped
+    ports:
+      - 5433:5432
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: admin
+      POSTGRES_DB: nestpro
+    volumes:
+      - nest-pro-pgdata:/var/lib/postgresql
+
+volumes:
+  nest-pro-pgdata:

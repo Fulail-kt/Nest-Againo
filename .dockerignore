@@ -1,0 +1,15 @@
+node_modules
+dist
+generated
+uploads
+.env
+.env.*
+!.env.example
+coverage
+.git
+.agents
+*.md
+!RAILWAY.md
+test
+.vscode
+.idea

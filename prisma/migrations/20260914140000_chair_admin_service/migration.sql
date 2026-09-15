@@ -1,0 +1,5 @@
+-- AlterTable
+ALTER TABLE "ShopChair" ADD COLUMN "canAdmin" BOOLEAN NOT NULL DEFAULT false;
+
+-- AlterTable
+ALTER TABLE "ShopService" ADD COLUMN "chairIds" INTEGER[] NOT NULL DEFAULT ARRAY[]::INTEGER[];

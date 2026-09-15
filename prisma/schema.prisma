@@ -1,0 +1,462 @@
+generator client {
+  provider     = "prisma-client"
+  output       = "../generated/prisma"
+  moduleFormat = "cjs"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  GYM_ADMIN
+  MEMBER
+  SHOP_OWNER
+  SHOP_STAFF
+}
+
+enum ShopMemberRole {
+  OWNER
+  STAFF
+}
+
+enum AppointmentStatus {
+  BOOKED
+  COMPLETED
+  CANCELLED
+  NO_SHOW
+}
+
+enum BookingSource {
+  APP
+  WHATSAPP
+  STAFF
+}
+
+enum WaConnectionStatus {
+  DISCONNECTED
+  CONNECTING
+  CONNECTED
+  EXPIRED
+  ERROR
+}
+
+enum WaMessageStatus {
+  QUEUED
+  SENDING
+  SENT
+  DELIVERED
+  READ
+  FAILED
+}
+
+enum MembershipStatus {
+  ACTIVE
+  INACTIVE
+}
+
+enum WorkoutStatus {
+  IN_PROGRESS
+  COMPLETED
+}
+
+enum ProgrammeMode {
+  FIXED
+  REPEAT
+}
+
+enum AssignmentStatus {
+  ACTIVE
+  COMPLETED
+}
+
+model Gym {
+  id                      Int      @id @default(autoincrement())
+  name                    String
+  code                    String   @unique
+  address                 String?
+  lat                     Float?
+  lng                     Float?
+  attendanceRadiusMeters  Int      @default(150)
+  /// JS weekday: 0=Sun … 6=Sat. Empty never allowed in API.
+  openDays                Int[]    @default([0, 1, 2, 3, 4, 5, 6])
+  defaultSets             Int      @default(3)
+  defaultReps             Int      @default(10)
+  defaultRestSeconds      Int      @default(60)
+  createdAt               DateTime @default(now())
+  updatedAt               DateTime @updatedAt
+
+  users          User[]
+  exercises      Exercise[]
+  programmes     Programme[]
+  announcements  Announcement[]
+  attendance     Attendance[]
+}
+
+model User {
+  id        Int              @id @default(autoincrement())
+  email     String           @unique
+  name      String
+  password  String
+  role      Role             @default(MEMBER)
+  status    MembershipStatus @default(ACTIVE)
+  gymId     Int?
+  gym       Gym?             @relation(fields: [gymId], references: [id])
+  shopId    Int?
+  shop      Shop?            @relation(fields: [shopId], references: [id])
+  phone     String?          @unique
+  fcmToken  String?
+  createdAt DateTime         @default(now())
+
+  assignments     MemberProgramme[]
+  sessions        WorkoutSession[]
+  attendance      Attendance[]
+  announcements   Announcement[]
+  shopMemberships ShopMember[]
+  chair           ShopChair?
+}
+
+model Exercise {
+  id            Int      @id @default(autoincrement())
+  gymId         Int
+  gym           Gym      @relation(fields: [gymId], references: [id], onDelete: Cascade)
+  name          String
+  description   String?
+  instructions  String?
+  imageUrl      String?
+  videoUrl      String?
+  muscleGroup   String?
+  /// ExerciseDB id when imported from catalog. Null = gym custom move.
+  sourceId      String?
+  defaultSets          Int      @default(3)
+  defaultReps          Int      @default(10)
+  defaultRestSeconds   Int      @default(60)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  programmeItems ProgrammeExercise[]
+  extraSets      WorkoutExtraSet[]
+
+  @@unique([gymId, sourceId])
+  @@index([gymId])
+}
+
+model Programme {
+  id               Int            @id @default(autoincrement())
+  gymId            Int
+  gym              Gym            @relation(fields: [gymId], references: [id], onDelete: Cascade)
+  name             String
+  description      String?
+  mode             ProgrammeMode  @default(REPEAT)
+  nextProgrammeId  Int?
+  nextProgramme    Programme?     @relation("ProgrammeNext", fields: [nextProgrammeId], references: [id], onDelete: SetNull)
+  previousOf       Programme[]    @relation("ProgrammeNext")
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+
+  days         ProgrammeDay[]
+  assignments  MemberProgramme[]
+  memberNextOf MemberProgramme[] @relation("MemberNextProgramme")
+
+  @@index([gymId])
+}
+
+model ProgrammeDay {
+  id           Int        @id @default(autoincrement())
+  programmeId  Int
+  programme    Programme  @relation(fields: [programmeId], references: [id], onDelete: Cascade)
+  name         String
+  order        Int
+  items        ProgrammeExercise[]
+  sessions     WorkoutSession[]
+
+  @@index([programmeId])
+}
+
+model ProgrammeExercise {
+  id           Int          @id @default(autoincrement())
+  dayId        Int
+  day          ProgrammeDay @relation(fields: [dayId], references: [id], onDelete: Cascade)
+  exerciseId   Int
+  exercise     Exercise     @relation(fields: [exerciseId], references: [id])
+  order        Int
+  sets         Int
+  reps         Int?
+  restSeconds  Int?
+  durationSeconds Int?
+  notes        String?
+  logs         WorkoutSet[]
+
+  @@index([dayId])
+}
+
+model MemberProgramme {
+  id               Int               @id @default(autoincrement())
+  memberId         Int
+  member           User              @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  programmeId      Int
+  programme        Programme         @relation(fields: [programmeId], references: [id], onDelete: Cascade)
+  status           AssignmentStatus  @default(ACTIVE)
+  /// null = use programme.mode
+  modeOverride     ProgrammeMode?
+  nextProgrammeId  Int?
+  nextProgramme    Programme?        @relation("MemberNextProgramme", fields: [nextProgrammeId], references: [id], onDelete: SetNull)
+  assignedAt       DateTime          @default(now())
+  completedAt      DateTime?
+
+  @@unique([memberId, programmeId])
+  @@index([memberId, status])
+}
+
+model WorkoutSession {
+  id          Int           @id @default(autoincrement())
+  memberId    Int
+  member      User          @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  dayId       Int
+  day         ProgrammeDay  @relation(fields: [dayId], references: [id])
+  status      WorkoutStatus @default(IN_PROGRESS)
+  dayKey      String
+  startedAt   DateTime      @default(now())
+  completedAt DateTime?
+  sets        WorkoutSet[]
+  extras      WorkoutExtraSet[]
+
+  @@unique([memberId, dayKey])
+  @@index([memberId])
+}
+
+model WorkoutExtraSet {
+  id          Int            @id @default(autoincrement())
+  sessionId   Int
+  session     WorkoutSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  exerciseId  Int
+  exercise    Exercise       @relation(fields: [exerciseId], references: [id])
+  setNumber   Int
+  weightKg    Float?
+  reps        Int?
+  completedAt DateTime       @default(now())
+
+  @@unique([sessionId, exerciseId, setNumber])
+  @@index([sessionId])
+}
+
+model WorkoutSet {
+  id                   Int                @id @default(autoincrement())
+  sessionId            Int
+  session              WorkoutSession     @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  programmeExerciseId  Int
+  programmeExercise    ProgrammeExercise  @relation(fields: [programmeExerciseId], references: [id])
+  setNumber            Int
+  weightKg             Float?
+  reps                 Int?
+  completedAt          DateTime           @default(now())
+
+  @@unique([sessionId, programmeExerciseId, setNumber])
+}
+
+model Attendance {
+  id          Int      @id @default(autoincrement())
+  memberId    Int
+  member      User     @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  gymId       Int
+  gym         Gym      @relation(fields: [gymId], references: [id], onDelete: Cascade)
+  lat         Float
+  lng         Float
+  dayKey      String
+  checkedInAt DateTime @default(now())
+
+  @@unique([memberId, dayKey])
+  @@index([memberId])
+  @@index([gymId, checkedInAt])
+}
+
+model Announcement {
+  id        Int      @id @default(autoincrement())
+  gymId     Int
+  gym       Gym      @relation(fields: [gymId], references: [id], onDelete: Cascade)
+  authorId  Int
+  author    User     @relation(fields: [authorId], references: [id])
+  title     String
+  body      String
+  createdAt DateTime @default(now())
+
+  @@index([gymId])
+}
+
+model Shop {
+  id        Int      @id @default(autoincrement())
+  name      String
+  phone     String?
+  email     String?
+  address   String?
+  timezone      String   @default("Asia/Kolkata")
+  currency      String   @default("INR")
+  followUpDays    Int      @default(45)
+  openHour        Int      @default(9)
+  closeHour       Int      @default(20)
+  closedWeekdays  Int[]    @default([])
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  users         User[]
+  members       ShopMember[]
+  chairs        ShopChair[]
+  customers     ShopCustomer[]
+  services      ShopService[]
+  appointments  ShopAppointment[]
+  whatsapp      WhatsappIntegration?
+  waMessages    WhatsappMessage[]
+}
+
+model ShopChair {
+  id          Int      @id @default(autoincrement())
+  shopId      Int
+  shop        Shop     @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  name        String
+  sort        Int      @default(0)
+  staffUserId Int?     @unique
+  staff       User?    @relation(fields: [staffUserId], references: [id], onDelete: SetNull)
+  /// Staff on this chair can run shop settings, chairs, services.
+  canAdmin    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  appointments ShopAppointment[]
+  preferredBy  ShopCustomer[]
+
+  @@index([shopId])
+}
+
+model ShopMember {
+  id        Int            @id @default(autoincrement())
+  shopId    Int
+  shop      Shop           @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  userId    Int
+  user      User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role      ShopMemberRole @default(STAFF)
+  createdAt DateTime       @default(now())
+
+  @@unique([shopId, userId])
+  @@index([userId])
+}
+
+model ShopCustomer {
+  id          Int       @id @default(autoincrement())
+  shopId      Int
+  shop        Shop      @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  name        String
+  phone       String
+  email       String?
+  notes       String?
+  lastVisitAt     DateTime?
+  lastMessagedAt  DateTime?
+  followUpDays    Int       @default(45)
+  followUpDueAt   DateTime?
+  loyaltyPoints   Int       @default(0)
+  /// Filenames only. Files live on disk under uploads/. Cap 5, oldest dropped.
+  photos          String[]  @default([])
+  isActive         Boolean  @default(true)
+  /// null = any free chair. Prefer this chair first, then next free.
+  preferredChairId Int?
+  preferredChair   ShopChair? @relation(fields: [preferredChairId], references: [id], onDelete: SetNull)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  appointments ShopAppointment[]
+
+  @@index([shopId])
+}
+
+model ShopService {
+  id              Int      @id @default(autoincrement())
+  shopId          Int
+  shop            Shop     @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  name            String
+  durationMinutes Int
+  price           Float
+  isActive        Boolean  @default(true)
+  /// Empty = every chair. Else only these chairs/staff can offer it.
+  chairIds        Int[]    @default([])
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  appointments ShopAppointment[]
+
+  @@index([shopId])
+}
+
+model ShopAppointment {
+  id         Int                @id @default(autoincrement())
+  shopId     Int
+  shop       Shop               @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  customerId Int
+  customer   ShopCustomer       @relation(fields: [customerId], references: [id])
+  serviceId  Int
+  service    ShopService        @relation(fields: [serviceId], references: [id])
+  chairId    Int
+  chair      ShopChair          @relation(fields: [chairId], references: [id])
+  startAt    DateTime
+  endAt      DateTime
+  status     AppointmentStatus  @default(BOOKED)
+  source     BookingSource      @default(STAFF)
+  remindAt   DateTime?
+  createdAt  DateTime           @default(now())
+  updatedAt  DateTime           @updatedAt
+
+  @@index([shopId, startAt])
+  @@index([shopId, chairId, startAt])
+  @@index([shopId, status])
+}
+
+model WhatsappIntegration {
+  id                 Int                @id @default(autoincrement())
+  shopId             Int                @unique
+  shop               Shop               @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  createdByUserId    Int
+  status             WaConnectionStatus @default(DISCONNECTED)
+  metaBusinessId     String?
+  wabaId             String?
+  phoneNumberId      String?
+  displayPhoneNumber String?
+  verifiedName       String?
+  accessTokenEnc     String?
+  tokenExpiresAt     DateTime?
+  connectTicket      String?            @unique
+  ticketExpiresAt    DateTime?
+  lastError          String?
+  disconnectedAt     DateTime?
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+
+  messages WhatsappMessage[]
+
+  @@index([wabaId])
+  @@index([phoneNumberId])
+}
+
+model WhatsappMessage {
+  id              Int              @id @default(autoincrement())
+  shopId          Int
+  shop            Shop             @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  integrationId   Int
+  integration     WhatsappIntegration @relation(fields: [integrationId], references: [id], onDelete: Cascade)
+  recipientPhone  String
+  messageType     String
+  templateName    String?
+  providerMsgId   String?          @unique
+  status          WaMessageStatus  @default(QUEUED)
+  errorMessage    String?
+  sentAt          DateTime?
+  deliveredAt     DateTime?
+  readAt          DateTime?
+  failedAt        DateTime?
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  @@index([shopId, createdAt])
+}
+
+model WhatsappWebhookEvent {
+  id        String   @id
+  createdAt DateTime @default(now())
+}
