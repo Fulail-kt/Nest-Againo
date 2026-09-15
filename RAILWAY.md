@@ -28,7 +28,7 @@ API service → **Variables**:
 
 | Variable | Value |
 |----------|--------|
-| `DATABASE_URL` | `${{Postgres.DATABASE_URL}}` (Reference variable from Postgres plugin) |
+| `DATABASE_URL` | Click `{}` → pick Postgres `DATABASE_PRIVATE_URL` (or `DATABASE_URL`). Must save with checkmark. Sidebar name must match (`Postgres` vs `PostgreSQL`). |
 | `JWT_SECRET` | long random string (32+ chars) |
 | `PORT` | Railway sets this automatically — do not hardcode |
 | `PUBLIC_API_URL` | `https://YOUR-SERVICE.up.railway.app` (after first deploy, copy from **Settings → Networking → Public URL**) |
