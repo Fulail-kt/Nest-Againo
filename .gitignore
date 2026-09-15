@@ -28,6 +28,11 @@ lerna-debug.log*
 .settings/
 *.sublime-workspace
 
+# IDE agent skills (local tooling, not app code)
+.agents/
+.claude/
+.windsurf/
+
 # IDE - VSCode
 .vscode/*
 !.vscode/settings.json

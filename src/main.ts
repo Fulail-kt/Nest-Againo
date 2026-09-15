@@ -21,7 +21,7 @@ async function bootstrap() {
   );
 
   const config = new DocumentBuilder()
-    .setTitle('Gym Platform API')
+    .setTitle('Againo API')
     .setDescription(
       [
         'Member: register with gym code → today workout → start → log sets → complete → history/check-in.',
