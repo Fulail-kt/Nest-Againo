@@ -1,3 +1,4 @@
+# railway: do not use --allow-build (pnpm 12 CLI has no such flag)
 FROM node:22-alpine AS base
 RUN apk add --no-cache openssl
 RUN corepack enable && corepack prepare pnpm@12.4.1 --activate
