@@ -5,7 +5,7 @@ WORKDIR /app
 
 FROM base AS build
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
-RUN pnpm install --frozen-lockfile
+RUN pnpm install --frozen-lockfile --allow-build=prisma --allow-build=@prisma/engines --allow-build=@prisma/client --allow-build=unrs-resolver
 COPY prisma ./prisma
 COPY prisma.config.ts ./
 COPY tsconfig.json tsconfig.build.json nest-cli.json ./
@@ -17,7 +17,7 @@ FROM base AS production
 ENV NODE_ENV=production
 WORKDIR /app
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
-RUN pnpm install --frozen-lockfile
+RUN pnpm install --frozen-lockfile --allow-build=prisma --allow-build=@prisma/engines --allow-build=@prisma/client --allow-build=unrs-resolver
 COPY --from=build /app/dist ./dist
 COPY --from=build /app/generated ./generated
 COPY prisma ./prisma
