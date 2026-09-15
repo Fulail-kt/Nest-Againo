@@ -1,11 +1,11 @@
 FROM node:22-alpine AS base
 RUN apk add --no-cache openssl
-RUN corepack enable && corepack prepare pnpm@latest --activate
+RUN corepack enable && corepack prepare pnpm@10.18.3 --activate
 WORKDIR /app
 
 FROM base AS build
-COPY package.json pnpm-lock.yaml ./
-RUN pnpm install --frozen-lockfile
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+RUN pnpm install --frozen-lockfile --allow-build=prisma --allow-build=@prisma/engines --allow-build=@prisma/client --allow-build=unrs-resolver
 COPY prisma ./prisma
 COPY prisma.config.ts ./
 COPY tsconfig.json tsconfig.build.json nest-cli.json ./
@@ -16,9 +16,8 @@ RUN pnpm run build
 FROM base AS production
 ENV NODE_ENV=production
 WORKDIR /app
-COPY package.json pnpm-lock.yaml ./
-RUN pnpm install --frozen-lockfile --prod \
-  && pnpm add prisma@7.9.1 --save-prod
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+RUN pnpm install --frozen-lockfile --allow-build=prisma --allow-build=@prisma/engines --allow-build=@prisma/client --allow-build=unrs-resolver
 COPY --from=build /app/dist ./dist
 COPY --from=build /app/generated ./generated
 COPY prisma ./prisma
