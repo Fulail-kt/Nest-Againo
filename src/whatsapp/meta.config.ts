@@ -16,6 +16,8 @@ export function oauthRedirectUri() {
   const { publicBase } = metaConfig();
   return publicBase ? `${publicBase}/integrations/whatsapp/oauth-return` : '';
 }
+
+export function metaReady() {
   const c = metaConfig();
   return !!(c.appId && c.appSecret && c.configId);
 }
