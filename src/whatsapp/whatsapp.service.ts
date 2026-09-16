@@ -123,14 +123,20 @@ export class WhatsAppService {
       let metaBusinessId: string | undefined;
 
       if (wabaId && phoneNumberId) {
-        const [phone, waba] = await Promise.all([
-          fetchPhone(accessToken, phoneNumberId),
-          fetchWaba(accessToken, wabaId),
-        ]);
-        displayPhoneNumber = phone.display_phone_number;
-        verifiedName = phone.verified_name ?? waba.name;
-        metaBusinessId = waba.owner_business_info?.id;
-      } else {
+        try {
+          const [phone, waba] = await Promise.all([
+            fetchPhone(accessToken, phoneNumberId),
+            fetchWaba(accessToken, wabaId),
+          ]);
+          displayPhoneNumber = phone.display_phone_number;
+          verifiedName = phone.verified_name ?? waba.name;
+          metaBusinessId = waba.owner_business_info?.id;
+        } catch {
+          wabaId = undefined;
+          phoneNumberId = undefined;
+        }
+      }
+      if (!wabaId || !phoneNumberId) {
         const found = await discoverAssets(accessToken);
         wabaId = found.wabaId;
         phoneNumberId = found.phoneNumberId;

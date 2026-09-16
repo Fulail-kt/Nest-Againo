@@ -124,6 +124,49 @@ type Owned = {
 };
 
 export async function discoverAssets(token: string) {
+  const { appId, appSecret } = metaConfig();
+  try {
+    const debug = await graph<{
+      data?: { granular_scopes?: Array<{ scope?: string; target_ids?: string[] }> };
+    }>('/debug_token', {
+      query: {
+        input_token: token,
+        access_token: `${appId}|${appSecret}`,
+      },
+    });
+    const wabaId = debug.data?.granular_scopes
+      ?.find((s) => s.scope === 'whatsapp_business_management' && s.target_ids?.length)
+      ?.target_ids?.[0];
+    if (wabaId) {
+      const [waba, phones] = await Promise.all([
+        fetchWaba(token, wabaId).catch(() => ({ name: undefined, owner_business_info: { id: undefined } })),
+        graph<{ data?: Array<{ id: string; display_phone_number?: string; verified_name?: string }> }>(
+          `/${wabaId}/phone_numbers`,
+          { token, query: { fields: 'id,display_phone_number,verified_name' } },
+        ).catch(() => ({ data: [] })),
+      ]);
+      const phone = phones.data?.[0];
+      if (phone?.id) {
+        return {
+          metaBusinessId: waba.owner_business_info?.id,
+          wabaId,
+          phoneNumberId: phone.id,
+          displayPhoneNumber: phone.display_phone_number,
+          verifiedName: phone.verified_name ?? waba.name,
+        };
+      }
+      return {
+        metaBusinessId: waba.owner_business_info?.id,
+        wabaId,
+        phoneNumberId: undefined,
+        displayPhoneNumber: undefined,
+        verifiedName: waba.name,
+      };
+    }
+  } catch (e) {
+    log.warn(`debug_token discover failed: ${e instanceof Error ? e.message : 'error'}`);
+  }
+
   const me = await graph<Owned>('/me/businesses', {
     token,
     query: {

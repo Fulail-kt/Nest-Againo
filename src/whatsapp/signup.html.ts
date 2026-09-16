@@ -62,6 +62,7 @@ export function embeddedSignupHtml(opts: {
           + '&response_type=code'
           + '&override_default_response_type=true'
           + '&config_id=' + encodeURIComponent(CONFIG_ID)
+          + '&scope=' + encodeURIComponent('whatsapp_business_management,whatsapp_business_messaging,business_management')
           + '&extras=' + extras;
         return;
       }
