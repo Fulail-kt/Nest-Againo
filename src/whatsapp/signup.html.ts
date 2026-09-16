@@ -1,7 +1,13 @@
-export function embeddedSignupHtml(opts: { appId: string; configId: string; graphVersion: string }) {
+export function embeddedSignupHtml(opts: {
+  appId: string;
+  configId: string;
+  graphVersion: string;
+  publicBase: string;
+}) {
   const appId = json(opts.appId);
   const configId = json(opts.configId);
   const version = json(opts.graphVersion);
+  const publicBase = json(opts.publicBase);
   return `<!doctype html>
 <html>
 <head>
@@ -21,6 +27,7 @@ export function embeddedSignupHtml(opts: { appId: string; configId: string; grap
     var APP_ID = ${appId};
     var CONFIG_ID = ${configId};
     var GRAPH = ${version};
+    var PUBLIC_BASE = ${publicBase};
     var session = null;
     var sent = false;
     function send(payload) {
@@ -43,6 +50,19 @@ export function embeddedSignupHtml(opts: { appId: string; configId: string; grap
       FB.init({ appId: APP_ID, autoLogAppEvents: true, xfbml: true, version: GRAPH });
     };
     function launch() {
+      if (PUBLIC_BASE) {
+        var redirect = PUBLIC_BASE + '/integrations/whatsapp/oauth-return';
+        var extras = encodeURIComponent(JSON.stringify({ setup: {}, sessionInfoVersion: '3' }));
+        window.location.href = 'https://www.facebook.com/' + GRAPH + '/dialog/oauth'
+          + '?client_id=' + encodeURIComponent(APP_ID)
+          + '&display=page'
+          + '&redirect_uri=' + encodeURIComponent(redirect)
+          + '&response_type=code'
+          + '&override_default_response_type=true'
+          + '&config_id=' + encodeURIComponent(CONFIG_ID)
+          + '&extras=' + extras;
+        return;
+      }
       FB.login(function (response) {
         if (response && response.authResponse && response.authResponse.code) {
           send({
@@ -51,8 +71,6 @@ export function embeddedSignupHtml(opts: { appId: string; configId: string; grap
             wabaId: session && (session.waba_id || session.wabaId),
             phoneNumberId: session && (session.phone_number_id || session.phoneNumberId)
           });
-        } else {
-          send({ type: 'cancel' });
         }
       }, {
         config_id: CONFIG_ID,
@@ -64,6 +82,35 @@ export function embeddedSignupHtml(opts: { appId: string; configId: string; grap
     document.getElementById('go').onclick = launch;
   </script>
   <script async defer src="https://connect.facebook.net/en_US/sdk.js"></script>
+</body>
+</html>`;
+}
+
+export function oauthReturnHtml() {
+  return `<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>WhatsApp</title>
+  <style>body{font-family:system-ui,sans-serif;background:#111;color:#eee;margin:0;padding:24px}</style>
+</head>
+<body>
+  <p id="msg">Returning to Againo…</p>
+  <script>
+    var q = new URLSearchParams(location.search);
+    var code = q.get('code');
+    var err = q.get('error');
+    var payload = code
+      ? { type: 'ok', code: code, wabaId: q.get('waba_id') || undefined, phoneNumberId: q.get('phone_number_id') || undefined }
+      : { type: 'cancel', error: err || 'cancelled' };
+    if (window.ReactNativeWebView) {
+      window.ReactNativeWebView.postMessage(JSON.stringify(payload));
+    }
+    document.getElementById('msg').textContent = code
+      ? 'Connected. This window can close.'
+      : 'Signup cancelled. Close and try again.';
+  </script>
 </body>
 </html>`;
 }

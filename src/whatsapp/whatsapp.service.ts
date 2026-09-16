@@ -89,8 +89,8 @@ export class WhatsAppService {
     if (!row || !row.ticketExpiresAt || row.ticketExpiresAt.getTime() < Date.now()) {
       throw new NotFoundException('Connect session expired. Start again from the app.');
     }
-    const { appId, configId, graphVersion } = metaConfig();
-    return embeddedSignupHtml({ appId, configId, graphVersion });
+    const { appId, configId, graphVersion, publicBase } = metaConfig();
+    return embeddedSignupHtml({ appId, configId, graphVersion, publicBase });
   }
 
   async complete(
