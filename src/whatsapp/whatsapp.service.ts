@@ -46,7 +46,7 @@ export class WhatsAppService {
     }
     const { appId, configId, graphVersion, publicBase } = metaConfig();
     const ticket = randomBytes(24).toString('hex');
-    const ticketExpiresAt = new Date(Date.now() + 15 * 60 * 1000);
+    const ticketExpiresAt = new Date(Date.now() + 45 * 60 * 1000);
     await this.prisma.whatsappIntegration.upsert({
       where: { shopId },
       create: {
