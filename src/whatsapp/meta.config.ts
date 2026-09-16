@@ -12,7 +12,10 @@ export function metaConfig() {
   };
 }
 
-export function metaReady() {
+export function oauthRedirectUri() {
+  const { publicBase } = metaConfig();
+  return publicBase ? `${publicBase}/integrations/whatsapp/oauth-return` : '';
+}
   const c = metaConfig();
   return !!(c.appId && c.appSecret && c.configId);
 }

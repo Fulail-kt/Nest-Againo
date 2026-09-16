@@ -1,5 +1,5 @@
 import { Logger } from '@nestjs/common';
-import { graphUrl, metaConfig } from './meta.config';
+import { graphUrl, metaConfig, oauthRedirectUri } from './meta.config';
 
 const log = new Logger('MetaGraph');
 
@@ -56,8 +56,14 @@ async function graph<T>(
 
 export async function exchangeCode(code: string) {
   const { appId, appSecret } = metaConfig();
+  const redirectUri = oauthRedirectUri();
   const short = await graph<{ access_token: string; expires_in?: number }>('/oauth/access_token', {
-    query: { client_id: appId, client_secret: appSecret, code },
+    query: {
+      client_id: appId,
+      client_secret: appSecret,
+      code,
+      ...(redirectUri ? { redirect_uri: redirectUri } : {}),
+    },
   });
   try {
     const long = await graph<{ access_token: string; expires_in?: number }>('/oauth/access_token', {

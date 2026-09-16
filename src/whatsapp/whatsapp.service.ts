@@ -9,7 +9,7 @@ import { randomBytes } from 'crypto';
 import { PrismaService } from '../prisma/prisma.service';
 import { decryptSecret, encryptSecret } from '../common/secret';
 import { toE164 } from '../common/phone';
-import { metaConfig, metaReady } from './meta.config';
+import { metaConfig, metaReady, oauthRedirectUri } from './meta.config';
 import {
   discoverAssets,
   exchangeCode,
@@ -90,7 +90,13 @@ export class WhatsAppService {
       throw new NotFoundException('Connect session expired. Start again from the app.');
     }
     const { appId, configId, graphVersion, publicBase } = metaConfig();
-    return embeddedSignupHtml({ appId, configId, graphVersion, publicBase });
+    return embeddedSignupHtml({
+      appId,
+      configId,
+      graphVersion,
+      publicBase,
+      redirectUri: oauthRedirectUri(),
+    });
   }
 
   async complete(

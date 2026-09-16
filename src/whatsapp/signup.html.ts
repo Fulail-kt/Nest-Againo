@@ -3,11 +3,13 @@ export function embeddedSignupHtml(opts: {
   configId: string;
   graphVersion: string;
   publicBase: string;
+  redirectUri: string;
 }) {
   const appId = json(opts.appId);
   const configId = json(opts.configId);
   const version = json(opts.graphVersion);
   const publicBase = json(opts.publicBase);
+  const redirectUri = json(opts.redirectUri);
   return `<!doctype html>
 <html>
 <head>
@@ -28,6 +30,7 @@ export function embeddedSignupHtml(opts: {
     var CONFIG_ID = ${configId};
     var GRAPH = ${version};
     var PUBLIC_BASE = ${publicBase};
+    var REDIRECT_URI = ${redirectUri};
     var session = null;
     var sent = false;
     function send(payload) {
@@ -50,13 +53,12 @@ export function embeddedSignupHtml(opts: {
       FB.init({ appId: APP_ID, autoLogAppEvents: true, xfbml: true, version: GRAPH });
     };
     function launch() {
-      if (PUBLIC_BASE) {
-        var redirect = PUBLIC_BASE + '/integrations/whatsapp/oauth-return';
+      if (REDIRECT_URI) {
         var extras = encodeURIComponent(JSON.stringify({ setup: {}, sessionInfoVersion: '3' }));
         window.location.href = 'https://www.facebook.com/' + GRAPH + '/dialog/oauth'
           + '?client_id=' + encodeURIComponent(APP_ID)
           + '&display=page'
-          + '&redirect_uri=' + encodeURIComponent(redirect)
+          + '&redirect_uri=' + encodeURIComponent(REDIRECT_URI)
           + '&response_type=code'
           + '&override_default_response_type=true'
           + '&config_id=' + encodeURIComponent(CONFIG_ID)
