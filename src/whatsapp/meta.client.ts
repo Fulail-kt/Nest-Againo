@@ -24,6 +24,8 @@ function userFacing(code?: number, fallback = 'WhatsApp request failed.') {
     return 'Add this recipient under Meta → WhatsApp → API Setup (allowed list). Only needed for Meta test numbers.';
   if (code === 132001 || code === 132000) return 'WhatsApp template missing or rejected.';
   if (code === 131047) return 'WhatsApp only allows free text inside a 24-hour window. Use a template.';
+  if (code === 131037)
+    return 'This WhatsApp number’s display name is not approved yet. In Meta → WhatsApp Manager → phone profile, submit the display name and wait for approval. Meta’s test panel can send before that; the app cannot.';
   if (code === 4 || code === 80007) return 'WhatsApp rate limit. Try again shortly.';
   if (code === 10) return 'WhatsApp permission denied. Reconnect WhatsApp.';
   return fallback;

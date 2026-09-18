@@ -17,25 +17,24 @@ export function oauthRedirectUri() {
   return publicBase ? `${publicBase}/integrations/whatsapp/oauth-return` : '';
 }
 
-export function oauthDialogUrl(opts?: { wabaId?: string | null }) {
+export function oauthDialogUrl(opts?: { embedded?: boolean }) {
   const { appId, configId, graphVersion } = metaConfig();
   const redirectUri = oauthRedirectUri();
-  if (!appId || !configId || !redirectUri) return '';
-  const extras: { sessionInfoVersion: string; setup?: { whatsAppBusinessAccount: { id: string } } } =
-    { sessionInfoVersion: '3' };
-  if (opts?.wabaId) {
-    extras.setup = { whatsAppBusinessAccount: { id: opts.wabaId } };
-  }
+  if (!appId || !redirectUri) return '';
+  const embedded = opts?.embedded !== false;
+  if (embedded && !configId) return '';
   const q = new URLSearchParams({
     client_id: appId,
     display: 'page',
     redirect_uri: redirectUri,
     response_type: 'code',
-    override_default_response_type: 'true',
-    config_id: configId,
     scope: 'whatsapp_business_management,whatsapp_business_messaging,business_management',
-    extras: JSON.stringify(extras),
   });
+  if (embedded) {
+    q.set('override_default_response_type', 'true');
+    q.set('config_id', configId);
+    q.set('extras', JSON.stringify({ sessionInfoVersion: '3' }));
+  }
   return `https://www.facebook.com/${graphVersion}/dialog/oauth?${q.toString()}`;
 }
 

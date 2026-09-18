@@ -46,6 +46,19 @@ export class WhatsAppService {
       );
     }
     const prev = await this.prisma.whatsappIntegration.findUnique({ where: { shopId } });
+    const tokenAlive =
+      !!prev?.accessTokenEnc &&
+      !!prev.phoneNumberId &&
+      (!prev.tokenExpiresAt || prev.tokenExpiresAt.getTime() > Date.now());
+    if (tokenAlive) {
+      await this.prisma.whatsappIntegration.update({
+        where: { shopId },
+        data: { status: 'CONNECTED', lastError: null, disconnectedAt: null },
+      });
+      return { ...(await this.publicOf(shopId)), restored: true, ticket: null, oauthUrl: null };
+    }
+
+    const reconnect = !!(prev?.wabaId && prev?.phoneNumberId);
     const { appId, configId, graphVersion, publicBase } = metaConfig();
     const ticket = randomBytes(24).toString('hex');
     const ticketExpiresAt = new Date(Date.now() + 45 * 60 * 1000);
@@ -78,7 +91,7 @@ export class WhatsAppService {
       signupUrl: publicBase
         ? `${publicBase}/integrations/whatsapp/signup/${ticket}`
         : null,
-      oauthUrl: oauthDialogUrl({ wabaId: prev?.wabaId }) || null,
+      oauthUrl: oauthDialogUrl({ embedded: !reconnect }) || null,
     };
   }
 
@@ -135,17 +148,17 @@ export class WhatsAppService {
           verifiedName = phone.verified_name ?? waba.name;
           metaBusinessId = waba.owner_business_info?.id;
         } catch {
-          wabaId = undefined;
-          phoneNumberId = undefined;
+          wabaId = row.wabaId ?? undefined;
+          phoneNumberId = row.phoneNumberId ?? undefined;
         }
       }
       if (!wabaId || !phoneNumberId) {
         const found = await discoverAssets(accessToken);
-        wabaId = found.wabaId;
-        phoneNumberId = found.phoneNumberId;
-        displayPhoneNumber = found.displayPhoneNumber;
-        verifiedName = found.verifiedName;
-        metaBusinessId = found.metaBusinessId;
+        wabaId = found.wabaId || row.wabaId || undefined;
+        phoneNumberId = found.phoneNumberId || row.phoneNumberId || undefined;
+        displayPhoneNumber = found.displayPhoneNumber ?? row.displayPhoneNumber ?? undefined;
+        verifiedName = found.verifiedName ?? row.verifiedName ?? undefined;
+        metaBusinessId = found.metaBusinessId ?? row.metaBusinessId ?? undefined;
       }
 
       if (!wabaId || !phoneNumberId) {
@@ -194,8 +207,6 @@ export class WhatsAppService {
       where: { shopId },
       data: {
         status: 'DISCONNECTED',
-        accessTokenEnc: null,
-        tokenExpiresAt: null,
         connectTicket: null,
         ticketExpiresAt: null,
         lastError: null,
@@ -208,16 +219,16 @@ export class WhatsAppService {
   async test(shopId: number, phone: string) {
     const to = toE164(phone);
     if (!to) throw new BadRequestException('Enter a valid phone number.');
-    const { testTemplate } = metaConfig();
+    const { testTemplate, templateLang } = metaConfig();
+    const name = testTemplate || 'hello_world';
     return this.send(shopId, {
       to,
-      kind: testTemplate ? 'template' : 'text',
-      template: testTemplate
-        ? { name: testTemplate, language: 'en', parameters: ['NestPro'] }
-        : undefined,
-      text: testTemplate
-        ? undefined
-        : 'Test from NestPro. If this fails, Meta needs an approved template or a 24-hour customer window.',
+      kind: 'template',
+      template: {
+        name,
+        language: testTemplate ? templateLang || 'en' : 'en_US',
+        parameters: testTemplate ? ['NestPro'] : [],
+      },
       messageType: 'test',
     });
   }
