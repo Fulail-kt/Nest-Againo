@@ -3,7 +3,7 @@ export function metaConfig() {
     appId: process.env.META_APP_ID?.trim() || '',
     appSecret: process.env.META_APP_SECRET?.trim() || '',
     configId: process.env.META_CONFIG_ID?.trim() || '',
-    graphVersion: process.env.META_GRAPH_API_VERSION?.trim() || 'v21.0',
+    graphVersion: process.env.META_GRAPH_API_VERSION?.trim() || 'v25.0',
     verifyToken: process.env.META_WEBHOOK_VERIFY_TOKEN?.trim() || '',
     testTemplate: process.env.WA_TEST_TEMPLATE?.trim() || '',
     greetingTemplate: process.env.WA_GREETING_TEMPLATE?.trim() || '',

@@ -227,17 +227,14 @@ export type SendPayload = {
 };
 
 export async function sendWhatsApp(payload: SendPayload) {
-  const body =
+  const template =
     payload.type === 'template' && payload.template
       ? {
-          messaging_product: 'whatsapp',
-          to: payload.to.replace(/^\+/, ''),
-          type: 'template',
-          template: {
-            name: payload.template.name,
-            language: { code: payload.template.language },
-            components: payload.template.parameters.length
-              ? [
+          name: payload.template.name,
+          language: { code: payload.template.language },
+          ...(payload.template.parameters.length
+            ? {
+                components: [
                   {
                     type: 'body',
                     parameters: payload.template.parameters.map((t) => ({
@@ -245,9 +242,18 @@ export async function sendWhatsApp(payload: SendPayload) {
                       text: t,
                     })),
                   },
-                ]
-              : undefined,
-          },
+                ],
+              }
+            : {}),
+        }
+      : undefined;
+  const body =
+    template
+      ? {
+          messaging_product: 'whatsapp',
+          to: payload.to.replace(/^\+/, ''),
+          type: 'template',
+          template,
         }
       : {
           messaging_product: 'whatsapp',
