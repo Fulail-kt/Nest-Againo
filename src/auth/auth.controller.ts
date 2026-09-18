@@ -1,4 +1,5 @@
 import { Body, Controller, Get, Post, UseGuards } from '@nestjs/common';
+import { Throttle } from '@nestjs/throttler';
 import {
   ApiBearerAuth,
   ApiConflictResponse,
@@ -26,6 +27,7 @@ export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
   @Post('register')
+  @Throttle({ default: { limit: 8, ttl: 60_000 } })
   @ApiOperation({ summary: 'Owner account — name, email, password. Company setup is onboarding.' })
   @ApiCreatedResponse({ type: AuthResponseDto })
   @ApiConflictResponse({ description: 'That email already has an account. Sign in instead.' })
@@ -34,6 +36,7 @@ export class AuthController {
   }
 
   @Post('register-admin')
+  @Throttle({ default: { limit: 8, ttl: 60_000 } })
   @ApiOperation({ summary: 'Legacy: create owner + company in one step' })
   @ApiCreatedResponse({ type: AuthResponseDto })
   @ApiConflictResponse({ description: 'That email already has an account. Sign in instead.' })
@@ -42,6 +45,7 @@ export class AuthController {
   }
 
   @Post('login')
+  @Throttle({ default: { limit: 8, ttl: 60_000 } })
   @ApiOperation({ summary: 'Login for owner, staff, or member' })
   @ApiOkResponse({ type: AuthResponseDto })
   @ApiUnauthorizedResponse()
@@ -50,6 +54,7 @@ export class AuthController {
   }
 
   @Post('google')
+  @Throttle({ default: { limit: 8, ttl: 60_000 } })
   @ApiOperation({ summary: 'Owner sign-in with Google ID token' })
   @ApiOkResponse({ type: AuthResponseDto })
   google(@Body() dto: GoogleAuthDto) {
@@ -57,6 +62,7 @@ export class AuthController {
   }
 
   @Post('verify-email')
+  @Throttle({ default: { limit: 8, ttl: 60_000 } })
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth('access-token')
   @ApiOkResponse({ type: AuthResponseDto })
@@ -65,6 +71,7 @@ export class AuthController {
   }
 
   @Post('resend-verify')
+  @Throttle({ default: { limit: 5, ttl: 60_000 } })
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth('access-token')
   resendVerify(@CurrentUser() user: JwtPayload) {

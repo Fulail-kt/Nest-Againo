@@ -10,9 +10,11 @@ import {
 import { ApiExcludeController } from '@nestjs/swagger';
 import type { RawBodyRequest } from '@nestjs/common';
 import type { Request } from 'express';
+import { SkipThrottle } from '@nestjs/throttler';
 import { WhatsAppService } from './whatsapp.service';
 
 @ApiExcludeController()
+@SkipThrottle()
 @Controller('webhooks/meta/whatsapp')
 export class WhatsAppWebhookController {
   constructor(private readonly wa: WhatsAppService) {}
