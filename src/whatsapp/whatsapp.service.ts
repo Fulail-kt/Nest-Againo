@@ -220,14 +220,18 @@ export class WhatsAppService {
     const to = toE164(phone);
     if (!to) throw new BadRequestException('Enter a valid phone number.');
     const { testTemplate, templateLang } = metaConfig();
-    const name = testTemplate || 'hello_world';
+    if (!testTemplate) {
+      throw new BadRequestException(
+        'hello_world only works on Meta’s public test number. Create a template in WhatsApp Manager → Message templates for this connected number, set WA_TEST_TEMPLATE to that name, restart Nest.',
+      );
+    }
     return this.send(shopId, {
       to,
       kind: 'template',
       template: {
-        name,
-        language: testTemplate ? templateLang || 'en' : 'en_US',
-        parameters: testTemplate ? ['NestPro'] : [],
+        name: testTemplate,
+        language: templateLang,
+        parameters: [],
       },
       messageType: 'test',
     });

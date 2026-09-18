@@ -7,7 +7,7 @@ export function metaConfig() {
     verifyToken: process.env.META_WEBHOOK_VERIFY_TOKEN?.trim() || '',
     testTemplate: process.env.WA_TEST_TEMPLATE?.trim() || '',
     greetingTemplate: process.env.WA_GREETING_TEMPLATE?.trim() || '',
-    templateLang: process.env.WA_TEMPLATE_LANG?.trim() || 'en',
+    templateLang: process.env.WA_TEMPLATE_LANG?.trim() || 'en_US',
     publicBase: (process.env.PUBLIC_API_URL || '').trim().replace(/\/$/, ''),
   };
 }
