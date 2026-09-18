@@ -9,7 +9,7 @@ import { randomBytes } from 'crypto';
 import { PrismaService } from '../prisma/prisma.service';
 import { decryptSecret, encryptSecret } from '../common/secret';
 import { toE164 } from '../common/phone';
-import { metaConfig, metaReady, oauthRedirectUri } from './meta.config';
+import { metaConfig, metaReady, oauthDialogUrl, oauthRedirectUri } from './meta.config';
 import {
   discoverAssets,
   exchangeCode,
@@ -76,6 +76,7 @@ export class WhatsAppService {
       signupUrl: publicBase
         ? `${publicBase}/integrations/whatsapp/signup/${ticket}`
         : null,
+      oauthUrl: oauthDialogUrl() || null,
     };
   }
 

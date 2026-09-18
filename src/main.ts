@@ -13,7 +13,15 @@ async function bootstrap() {
   const prod = process.env.NODE_ENV === 'production';
 
   app.set('trust proxy', 1);
-  app.use(helmet({ contentSecurityPolicy: prod ? undefined : false }));
+  // API + Meta OAuth HTML. Default CSP/COOP/CORP blocks Facebook login in WebView.
+  app.use(
+    helmet({
+      contentSecurityPolicy: false,
+      crossOriginEmbedderPolicy: false,
+      crossOriginOpenerPolicy: false,
+      crossOriginResourcePolicy: false,
+    }),
+  );
   app.useBodyParser('json', { limit: '1mb' });
   app.enableCors({
     origin: true,

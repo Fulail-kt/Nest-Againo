@@ -17,6 +17,24 @@ export function oauthRedirectUri() {
   return publicBase ? `${publicBase}/integrations/whatsapp/oauth-return` : '';
 }
 
+export function oauthDialogUrl() {
+  const { appId, configId, graphVersion } = metaConfig();
+  const redirectUri = oauthRedirectUri();
+  if (!appId || !configId || !redirectUri) return '';
+  const extras = JSON.stringify({ setup: {}, sessionInfoVersion: '3' });
+  const q = new URLSearchParams({
+    client_id: appId,
+    display: 'page',
+    redirect_uri: redirectUri,
+    response_type: 'code',
+    override_default_response_type: 'true',
+    config_id: configId,
+    scope: 'whatsapp_business_management,whatsapp_business_messaging,business_management',
+    extras,
+  });
+  return `https://www.facebook.com/${graphVersion}/dialog/oauth?${q.toString()}`;
+}
+
 export function metaReady() {
   const c = metaConfig();
   return !!(c.appId && c.appSecret && c.configId);

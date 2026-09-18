@@ -1,10 +1,12 @@
 import { Controller, Get, Param, Res } from '@nestjs/common';
 import { ApiExcludeController } from '@nestjs/swagger';
+import { SkipThrottle } from '@nestjs/throttler';
 import type { Response } from 'express';
 import { oauthReturnHtml } from './signup.html';
 import { WhatsAppService } from './whatsapp.service';
 
 @ApiExcludeController()
+@SkipThrottle()
 @Controller('integrations/whatsapp')
 export class WhatsAppSignupController {
   constructor(private readonly wa: WhatsAppService) {}
