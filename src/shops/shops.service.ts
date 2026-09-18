@@ -88,6 +88,7 @@ export class ShopsService {
           password: await bcrypt.hash(staff.password, 10),
           role: Role.SHOP_STAFF,
           shopId,
+          emailVerifiedAt: new Date(),
         },
       });
       await tx.shopMember.create({
@@ -144,6 +145,7 @@ export class ShopsService {
             password: await bcrypt.hash(staff.password, 10),
             role: Role.SHOP_STAFF,
             shopId,
+            emailVerifiedAt: new Date(),
           },
         });
         await this.prisma.shopMember.create({

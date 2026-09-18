@@ -5,6 +5,8 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AttendanceModule } from './attendance/attendance.module';
 import { AuthModule } from './auth/auth.module';
+import { MailModule } from './mail/mail.module';
+import { PlatformModule } from './platform/platform.module';
 import { ExercisesModule } from './exercises/exercises.module';
 import { GymsModule } from './gyms/gyms.module';
 import { MembersModule } from './members/members.module';
@@ -19,7 +21,9 @@ import { KeepAliveService } from './keep-alive.service';
   imports: [
     ScheduleModule.forRoot(),
     PrismaModule,
+    MailModule,
     AuthModule,
+    PlatformModule,
     GymsModule,
     MembersModule,
     ExercisesModule,

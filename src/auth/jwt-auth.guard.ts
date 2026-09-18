@@ -17,7 +17,7 @@ export class JwtAuthGuard implements CanActivate {
     const token = this.readBearer(request);
 
     if (!token) {
-      throw new UnauthorizedException('Missing access token');
+      throw new UnauthorizedException('Please sign in again.');
     }
 
     try {
@@ -25,7 +25,7 @@ export class JwtAuthGuard implements CanActivate {
       request['user'] = payload;
       return true;
     } catch {
-      throw new UnauthorizedException('Invalid or expired token');
+      throw new UnauthorizedException('Please sign in again.');
     }
   }
 

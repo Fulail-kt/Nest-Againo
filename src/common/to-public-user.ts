@@ -9,6 +9,8 @@ export type PublicUser = {
   gymId: number | null;
   shopId: number | null;
   phone: string | null;
+  emailVerified: boolean;
+  needsOnboarding: boolean;
   createdAt: Date;
 };
 
@@ -16,13 +18,12 @@ export function toPublicUser(user: {
   id: number;
   email: string;
   name: string;
-  password: string;
   role: Role;
   status: MembershipStatus;
   gymId: number | null;
   shopId: number | null;
   phone?: string | null;
-  fcmToken: string | null;
+  emailVerifiedAt?: Date | null;
   createdAt: Date;
 }): PublicUser {
   return {
@@ -34,6 +35,8 @@ export function toPublicUser(user: {
     gymId: user.gymId,
     shopId: user.shopId,
     phone: user.phone ?? null,
+    emailVerified: !!user.emailVerifiedAt,
+    needsOnboarding: user.role === Role.OWNER,
     createdAt: user.createdAt,
   };
 }

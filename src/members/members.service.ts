@@ -37,7 +37,7 @@ export class MembersService {
       where: { email: dto.email },
     });
     if (existing) {
-      throw new ConflictException('Email already registered');
+      throw new ConflictException('That email is already used.');
     }
     const user = await this.prisma.user.create({
       data: {
@@ -46,6 +46,7 @@ export class MembersService {
         password: await bcrypt.hash(dto.password, 10),
         role: Role.MEMBER,
         gymId,
+        emailVerifiedAt: new Date(),
       },
     });
     return toPublicUser(user);

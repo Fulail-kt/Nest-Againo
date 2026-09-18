@@ -1,27 +1,21 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsEmail, IsString, Matches, MaxLength, MinLength } from 'class-validator';
-import { Transform } from 'class-transformer';
+import { IsEmail, IsString, MaxLength, MinLength } from 'class-validator';
 
 export class RegisterDto {
-  @ApiProperty({ example: 'member@gym.com' })
-  @IsEmail()
-  @MaxLength(120)
+  @ApiProperty({ example: 'owner@shop.com' })
+  @IsEmail({}, { message: 'Enter a valid email' })
+  @MaxLength(120, { message: 'Enter a valid email' })
   email!: string;
 
-  @ApiProperty({ example: 'Jane Member' })
+  @ApiProperty({ example: 'Alex Owner' })
   @IsString()
-  @MinLength(2)
-  @MaxLength(80)
+  @MinLength(2, { message: 'Enter your full name' })
+  @MaxLength(80, { message: 'Enter your full name' })
   name!: string;
 
   @ApiProperty({ example: 'secret123' })
   @IsString()
-  @MinLength(6)
-  @MaxLength(72)
+  @MinLength(6, { message: 'Password must be at least 6 characters' })
+  @MaxLength(72, { message: 'Password must be at least 6 characters' })
   password!: string;
-
-  @ApiProperty({ example: 'ABC123', description: 'Gym join code' })
-  @Transform(({ value }) => String(value ?? '').trim().toUpperCase())
-  @Matches(/^[A-Z0-9]{4,8}$/, { message: '4–8 letter or number gym code' })
-  gymCode!: string;
 }

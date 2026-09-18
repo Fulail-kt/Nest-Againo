@@ -9,6 +9,8 @@ datasource db {
 }
 
 enum Role {
+  SUPER_ADMIN
+  OWNER
   GYM_ADMIN
   MEMBER
   SHOP_OWNER
@@ -94,19 +96,23 @@ model Gym {
 }
 
 model User {
-  id        Int              @id @default(autoincrement())
-  email     String           @unique
-  name      String
-  password  String
-  role      Role             @default(MEMBER)
-  status    MembershipStatus @default(ACTIVE)
-  gymId     Int?
-  gym       Gym?             @relation(fields: [gymId], references: [id])
-  shopId    Int?
-  shop      Shop?            @relation(fields: [shopId], references: [id])
-  phone     String?          @unique
-  fcmToken  String?
-  createdAt DateTime         @default(now())
+  id                Int              @id @default(autoincrement())
+  email             String           @unique
+  name              String
+  password          String
+  role              Role             @default(MEMBER)
+  status            MembershipStatus @default(ACTIVE)
+  gymId             Int?
+  gym               Gym?             @relation(fields: [gymId], references: [id])
+  shopId            Int?
+  shop              Shop?            @relation(fields: [shopId], references: [id])
+  phone             String?          @unique
+  fcmToken          String?
+  googleId          String?          @unique
+  emailVerifiedAt   DateTime?
+  verifyCodeHash    String?
+  verifyCodeExpires DateTime?
+  createdAt         DateTime         @default(now())
 
   assignments     MemberProgramme[]
   sessions        WorkoutSession[]

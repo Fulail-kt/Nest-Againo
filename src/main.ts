@@ -1,9 +1,10 @@
 import 'dotenv/config';
 import { join } from 'path';
-import { ValidationPipe } from '@nestjs/common';
+import { BadRequestException, ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import type { ValidationError } from 'class-validator';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
@@ -17,6 +18,8 @@ async function bootstrap() {
       forbidNonWhitelisted: true,
       transform: true,
       transformOptions: { enableImplicitConversion: true },
+      exceptionFactory: (errors: ValidationError[]) =>
+        new BadRequestException(firstHint(errors)),
     }),
   );
 
@@ -24,8 +27,8 @@ async function bootstrap() {
     .setTitle('Againo API')
     .setDescription(
       [
-        'Member: register with gym code → today workout → start → log sets → complete → history/check-in.',
-        'Owner: register-admin with kind GYM or BARBER → gym admin app or barber shop app.',
+        'Owner: register → verify email → onboarding (company name + type).',
+        'Members and staff are created inside the gym/shop, not on public signup.',
         'Authorize with accessToken from login.',
       ].join('\n\n'),
     )
@@ -50,3 +53,15 @@ bootstrap().catch((err) => {
   console.error(err);
   process.exit(1);
 });
+
+function firstHint(errors: ValidationError[]): string {
+  for (const e of errors) {
+    const hit = e.constraints ? Object.values(e.constraints)[0] : undefined;
+    if (hit) return hit;
+    if (e.children?.length) {
+      const nested = firstHint(e.children);
+      if (nested) return nested;
+    }
+  }
+  return 'Check the form and try again.';
+}

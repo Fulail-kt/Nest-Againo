@@ -5,20 +5,20 @@ import { MembershipStatus, ProgrammeMode } from '../../../generated/prisma/clien
 
 export class CreateMemberDto {
   @ApiProperty()
-  @IsEmail()
+  @IsEmail({}, { message: 'Enter a valid email' })
   @MaxLength(120)
   email!: string;
 
   @ApiProperty()
   @IsString()
-  @MinLength(2)
-  @MaxLength(80)
+  @MinLength(2, { message: 'Enter a full name' })
+  @MaxLength(80, { message: 'Enter a full name' })
   name!: string;
 
   @ApiProperty({ example: 'secret123' })
   @IsString()
-  @MinLength(6)
-  @MaxLength(72)
+  @MinLength(6, { message: 'Password must be at least 6 characters' })
+  @MaxLength(72, { message: 'Password must be at least 6 characters' })
   password!: string;
 }
 

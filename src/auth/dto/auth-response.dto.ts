@@ -27,6 +27,12 @@ export class UserPublicDto {
   phone?: string | null;
 
   @ApiProperty()
+  emailVerified!: boolean;
+
+  @ApiProperty()
+  needsOnboarding!: boolean;
+
+  @ApiProperty()
   createdAt!: Date;
 }
 

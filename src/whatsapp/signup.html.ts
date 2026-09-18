@@ -15,7 +15,7 @@ export function embeddedSignupHtml(opts: {
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Connect WhatsApp</title>
+  <title>Againo · Connect WhatsApp</title>
   <style>
     body{font-family:system-ui,sans-serif;background:#111;color:#eee;margin:0;padding:24px}
     button{background:#25D366;color:#111;border:0;border-radius:10px;padding:14px 18px;font-size:16px;width:100%}
@@ -95,7 +95,7 @@ export function oauthReturnHtml() {
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>WhatsApp</title>
+  <title>Againo</title>
   <style>body{font-family:system-ui,sans-serif;background:#111;color:#eee;margin:0;padding:24px}</style>
 </head>
 <body>
