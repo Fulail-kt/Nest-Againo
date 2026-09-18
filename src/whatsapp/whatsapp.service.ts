@@ -17,6 +17,7 @@ import {
   fetchWaba,
   MetaApiError,
   sendWhatsApp,
+  registerPhone,
   subscribeWaba,
 } from './meta.client';
 import { embeddedSignupHtml } from './signup.html';
@@ -44,6 +45,7 @@ export class WhatsAppService {
         'WhatsApp is not configured on this server. Set META_APP_ID, META_APP_SECRET, and META_CONFIG_ID.',
       );
     }
+    const prev = await this.prisma.whatsappIntegration.findUnique({ where: { shopId } });
     const { appId, configId, graphVersion, publicBase } = metaConfig();
     const ticket = randomBytes(24).toString('hex');
     const ticketExpiresAt = new Date(Date.now() + 45 * 60 * 1000);
@@ -76,7 +78,7 @@ export class WhatsAppService {
       signupUrl: publicBase
         ? `${publicBase}/integrations/whatsapp/signup/${ticket}`
         : null,
-      oauthUrl: oauthDialogUrl() || null,
+      oauthUrl: oauthDialogUrl({ wabaId: prev?.wabaId }) || null,
     };
   }
 
@@ -153,6 +155,7 @@ export class WhatsAppService {
       }
 
       await subscribeWaba(accessToken, wabaId);
+      await registerPhone(accessToken, phoneNumberId);
 
       await this.prisma.whatsappIntegration.update({
         where: { shopId },
@@ -307,18 +310,30 @@ export class WhatsAppService {
     if (!conn) {
       throw new BadRequestException('WhatsApp is not connected for this shop.');
     }
+    const payload = {
+      phoneNumberId: conn.phoneNumberId,
+      token: conn.token,
+      to: msg.to,
+      type: msg.kind,
+      text: msg.text,
+      template: msg.template,
+    };
     try {
-      await sendWhatsApp({
-        phoneNumberId: conn.phoneNumberId,
-        token: conn.token,
-        to: msg.to,
-        type: msg.kind,
-        text: msg.text,
-        template: msg.template,
-      });
+      await sendWhatsApp(payload);
       return { ok: true, status: 'SENT' as const };
     } catch (e) {
       const err = e instanceof MetaApiError ? e : new MetaApiError('Unable to send WhatsApp message.');
+      if (err.code === 133010) {
+        await registerPhone(conn.token, conn.phoneNumberId);
+        try {
+          await sendWhatsApp(payload);
+          return { ok: true, status: 'SENT' as const };
+        } catch (retry) {
+          const again =
+            retry instanceof MetaApiError ? retry : err;
+          throw new BadRequestException(again.message);
+        }
+      }
       if (err.code === 190) {
         await this.prisma.whatsappIntegration.update({
           where: { shopId },

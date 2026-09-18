@@ -17,6 +17,11 @@ export class MetaApiError extends Error {
 
 function userFacing(code?: number, fallback = 'WhatsApp request failed.') {
   if (code === 190) return 'WhatsApp connection expired. Reconnect WhatsApp.';
+  if (code === 133010)
+    return 'This shop number is not registered on WhatsApp Cloud API. Reconnect WhatsApp and pick the Cloud API phone — the Meta test panel uses a different number.';
+  if (code === 131026) return 'That phone is not on WhatsApp.';
+  if (code === 131030)
+    return 'Add this recipient under Meta → WhatsApp → API Setup (allowed list). Only needed for Meta test numbers.';
   if (code === 132001 || code === 132000) return 'WhatsApp template missing or rejected.';
   if (code === 131047) return 'WhatsApp only allows free text inside a 24-hour window. Use a template.';
   if (code === 4 || code === 80007) return 'WhatsApp rate limit. Try again shortly.';
@@ -191,6 +196,22 @@ export async function subscribeWaba(token: string, wabaId: string) {
     await graph(`/${wabaId}/subscribed_apps`, { method: 'POST', token });
   } catch (e) {
     log.warn(`subscribe apps failed: ${e instanceof Error ? e.message : 'error'}`);
+  }
+}
+
+/** Cloud API cannot send until the phone is registered. Safe if already registered. */
+export async function registerPhone(token: string, phoneNumberId: string) {
+  try {
+    await graph(`/${phoneNumberId}/register`, {
+      method: 'POST',
+      token,
+      body: {
+        messaging_product: 'whatsapp',
+        pin: process.env.WA_PHONE_PIN?.trim() || '000000',
+      },
+    });
+  } catch (e) {
+    log.warn(`register phone failed: ${e instanceof Error ? e.message : 'error'}`);
   }
 }
 

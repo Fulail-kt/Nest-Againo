@@ -54,7 +54,7 @@ export function embeddedSignupHtml(opts: {
     };
     function launch() {
       if (REDIRECT_URI) {
-        var extras = encodeURIComponent(JSON.stringify({ setup: {}, sessionInfoVersion: '3' }));
+        var extras = encodeURIComponent(JSON.stringify({ sessionInfoVersion: '3' }));
         window.location.href = 'https://www.facebook.com/' + GRAPH + '/dialog/oauth'
           + '?client_id=' + encodeURIComponent(APP_ID)
           + '&display=page'
@@ -79,7 +79,7 @@ export function embeddedSignupHtml(opts: {
         config_id: CONFIG_ID,
         response_type: 'code',
         override_default_response_type: true,
-        extras: { setup: {}, sessionInfoVersion: '3' }
+        extras: { sessionInfoVersion: '3' }
       });
     }
     document.getElementById('go').onclick = launch;

@@ -17,11 +17,15 @@ export function oauthRedirectUri() {
   return publicBase ? `${publicBase}/integrations/whatsapp/oauth-return` : '';
 }
 
-export function oauthDialogUrl() {
+export function oauthDialogUrl(opts?: { wabaId?: string | null }) {
   const { appId, configId, graphVersion } = metaConfig();
   const redirectUri = oauthRedirectUri();
   if (!appId || !configId || !redirectUri) return '';
-  const extras = JSON.stringify({ setup: {}, sessionInfoVersion: '3' });
+  const extras: { sessionInfoVersion: string; setup?: { whatsAppBusinessAccount: { id: string } } } =
+    { sessionInfoVersion: '3' };
+  if (opts?.wabaId) {
+    extras.setup = { whatsAppBusinessAccount: { id: opts.wabaId } };
+  }
   const q = new URLSearchParams({
     client_id: appId,
     display: 'page',
@@ -30,7 +34,7 @@ export function oauthDialogUrl() {
     override_default_response_type: 'true',
     config_id: configId,
     scope: 'whatsapp_business_management,whatsapp_business_messaging,business_management',
-    extras,
+    extras: JSON.stringify(extras),
   });
   return `https://www.facebook.com/${graphVersion}/dialog/oauth?${q.toString()}`;
 }
